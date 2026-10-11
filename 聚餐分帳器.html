@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>聚餐分帳器</title>
+  <style>
+    :root {font-family:system-ui,-apple-system,"Noto Sans TC","Microsoft JhengHei",sans-serif;color:#182b30;background:#f4f7f6}
+    * {box-sizing:border-box}
+    body {margin:0;min-height:100vh;display:grid;place-items:center;padding:22px 14px}
+    main {width:min(100%,520px)}
+    .top {text-align:center;margin-bottom:24px}
+    .eyebrow {color:#24806d;font-weight:800;letter-spacing:.13em;font-size:.77rem}
+    h1 {font-size:clamp(1.85rem,6vw,2.35rem);margin:8px 0;color:#183e36}
+    .subtitle {margin:0;color:#61746e;line-height:1.6}
+    .panel {background:#fff;border:1px solid #e1eae5;border-radius:24px;padding:clamp(21px,5vw,32px);box-shadow:0 12px 36px #12382b0c}
+    label.field {display:block;font-weight:750;margin:0 0 9px}
+    .input-wrap {display:flex;align-items:center;border:2px solid #dbe6e0;border-radius:13px;background:#fff;overflow:hidden;transition:border-color .18s}
+    .input-wrap:focus-within {border-color:#16846b}
+    input[type=number] {font:inherit;width:100%;border:0;outline:0;padding:14px 15px;color:#182b30;background:transparent;font-size:1.18rem;min-width:0}
+    .suffix {color:#657770;padding:0 16px;font-weight:700;white-space:nowrap}
+    .field-block {margin-bottom:23px}
+    .toggle {display:flex;align-items:center;gap:13px;padding:15px;border:1px solid #dce8e1;border-radius:14px;cursor:pointer;background:#fbfdfc}
+    .toggle input {accent-color:#147e66;width:21px;height:21px;flex:none}
+    .toggle strong {display:block}
+    .toggle small {display:block;color:#71827c;font-size:.82rem;margin-top:3px}
+    .error {color:#b42318;min-height:22px;font-size:.89rem;margin:10px 0 0}
+    .result {background:#eaf6ef;border-radius:18px;padding:23px 20px;margin-top:7px}
+    .result-title {font-size:.83rem;font-weight:800;color:#316b56;letter-spacing:.05em;margin:0 0 14px}
+    .person {display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin:13px 0}
+    .person-name {font-weight:750}
+    .person-name small {display:block;font-weight:500;color:#607b6e;margin-top:5px;font-size:.8rem}
+    .amount {font-weight:850;font-size:clamp(1.35rem,5vw,1.8rem);color:#115f48;white-space:nowrap;font-variant-numeric:tabular-nums}
+    .amount small {font-size:.7em}
+    .line {height:1px;background:#cde6d7;margin:16px 0}
+    .summary {border-top:1px solid #e1e9e4;padding-top:18px;margin-top:22px}
+    .summary-row {display:flex;justify-content:space-between;gap:12px;margin:10px 0;color:#65766f;font-size:.91rem}
+    .summary-row strong {color:#314b3f;font-variant-numeric:tabular-nums}
+    .summary-row.total {font-size:1.09rem;font-weight:800;color:#203f32;border-top:1px solid #e5ece7;padding-top:15px;margin-top:14px}
+    .summary-row.total strong {color:#12684d}
+    .footnote {font-size:.8rem;color:#6b7a73;line-height:1.7;text-align:center;margin:17px 10px}
+    [hidden] {display:none!important}
+  </style>
+</head>
+<body>
+<main>
+  <header class="top">
+    <div class="eyebrow">DINNER SPLIT</div>
+    <h1>🍽️ 聚餐分帳器</h1>
+    <p class="subtitle">輸入金額與人數，算出每個人該付多少。</p>
+  </header>
+  <section class="panel" aria-label="分帳計算">
+    <div class="field-block">
+      <label class="field" for="total">餐費金額</label>
+      <div class="input-wrap"><input id="total" type="number" min="0" max="999999999999" step="1" value="1000" inputmode="numeric" aria-describedby="error"><span class="suffix">元</span></div>
+    </div>
+    <div class="field-block">
+      <label class="field" for="people">聚餐人數（包含付錢的人）</label>
+      <div class="input-wrap"><input id="people" type="number" min="1" max="100000" step="1" value="3" inputmode="numeric" aria-describedby="error"><span class="suffix">人</span></div>
+    </div>
+    <label class="toggle" for="service"><input id="service" type="checkbox"><span><strong>加 10% 服務費</strong><small>服務費以元為單位，四捨五入</small></span></label>
+    <p id="error" class="error" role="alert" aria-live="polite"></p>
+    <div class="result" id="result" aria-live="polite" aria-atomic="true">
+      <p class="result-title">分帳結果</p>
+      <div class="person"><div class="person-name">付錢的人 <small id="payer-note">負責吸收除不盡的零頭</small></div><div class="amount"><span id="payer-amount">334</span> <small>元</small></div></div>
+      <div class="line"></div>
+      <div class="person" id="others-row"><div class="person-name" id="others-label">其他 2 人 <small>每人支付</small></div><div class="amount"><span id="others-amount">333</span> <small>元</small></div></div>
+    </div>
+    <div class="summary" id="summary">
+      <div class="summary-row"><span>餐費</span><strong id="base-summary">1,000 元</strong></div>
+      <div class="summary-row"><span>服務費（10%）</span><strong id="service-summary">0 元</strong></div>
+      <div class="summary-row total"><span>應付總金額</span><strong id="total-summary">1,000 元</strong></div>
+      <div class="summary-row"><span>分帳加總核對</span><strong id="check-summary">1,000 元 ✓</strong></div>
+    </div>
+  </section>
+  <p class="footnote">不連線、不登入、不儲存資料。所有計算只在此頁面進行。</p>
+</main>
+<script>
+(() => {
+  'use strict';
+  const $ = id => document.getElementById(id);
+  const fmt = n => n.toLocaleString('zh-TW');
+  const inputs = [$('total'), $('people'), $('service')];
+  function calculate() {
+    const amountText = $('total').value;
+    const peopleText = $('people').value;
+    const amount = Number(amountText);
+    const people = Number(peopleText);
+    let error = '';
+    if (amountText === '' || !Number.isSafeInteger(amount) || amount < 0 || amount > 999999999999) {
+      error = '請輸入 0 至 999,999,999,999 之間的整數金額。';
+    } else if (peopleText === '' || !Number.isSafeInteger(people) || people < 1 || people > 100000) {
+      error = '請輸入 1 至 100,000 之間的整數人數。';
+    }
+    $('error').textContent = error;
+    $('result').hidden = $('summary').hidden = Boolean(error);
+    if (error) return;
+    // Whole-dollar service fee is rounded half up. Integer arithmetic avoids floating-point drift.
+    const fee = $('service').checked ? Math.floor((amount + 5) / 10) : 0;
+    const total = amount + fee;
+    const eachOther = Math.floor(total / people);
+    const payer = total - eachOther * (people - 1);
+    const remainder = total % people;
+    $('payer-amount').textContent = fmt(payer);
+    $('others-amount').textContent = fmt(eachOther);
+    $('others-label').innerHTML = '其他 ' + fmt(people - 1) + ' 人 <small>每人支付</small>';
+    $('others-row').hidden = people === 1;
+    $('payer-note').textContent = remainder > 0 ? '包含除不盡的零頭 ' + fmt(remainder) + ' 元' : '無需吸收零頭';
+    $('base-summary').textContent = fmt(amount) + ' 元';
+    $('service-summary').textContent = fmt(fee) + ' 元';
+    $('total-summary').textContent = fmt(total) + ' 元';
+    $('check-summary').textContent = fmt(payer + eachOther * (people - 1)) + ' 元 ✓';
+  }
+  inputs.forEach(el => el.addEventListener('input', calculate));
+  calculate();
+})();
+</script>
+</body>
+</html>
